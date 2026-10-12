@@ -1,16 +1,40 @@
 # Algorithm / Bsp / Components API 设计说明
 
-日期：2026-09-27。状态：设计说明与当前源码并存。Algorithm 的 PID、ramp、ringBuffer 和 math_utils 已存在；Bsp 当前包含 PWM、CAN、UART、LED、OS、ADC 等实现；Components 已实现 DBUS，motor_tt 与 servo 接口存在但默认不可启用，motor_dji 已实现三种型号协议，通过配置结构体注册。本文后续各节保留完整目标 API 设计，不能据此推断每个设计能力都已在当前代码中实现。
+日期：2026-09-27（2026-10 按当前源码校订"当前实现现状"部分）。状态：本文是目标 API 设计说明，与当前源码并存。后续各节的原型与行为约定是**设计目标**，不等同于已实现；实际可调用的接口以 `Algorithm/Inc`、`Bsp/Inc`、`Components/Inc` 下的头文件为准。
 
-依据：[框架设计方案](框架设计方案.md)、[功能引脚对应](功能引脚对应.md)。当前可见头文件与源文件数为 Algorithm 7 个、Bsp 15 个、Components 10 个，共 32 个；I2C 仅保留在文档设计中，暂不创建文件或实现。每节定义头文件的公共 API 与源文件的实现责任；math_utils 仅保留头文件，不增加框架模块。代码按 C99 编写，不修改工程默认 C 标准。本文仅核对文件与接口状态，未据此声称已构建或测试。
+依据：[框架设计方案](框架设计方案.md)、[功能引脚对应](功能引脚对应.md)。当前文件数为 Algorithm 7 个、Bsp 14 个、Components 16 个、Application 1 个，共 38 个；I2C 仅保留在文档设计中，暂不创建文件或实现。每节定义头文件的公共 API 与源文件的实现责任；math_utils 仅保留头文件，不增加框架模块。代码按 C99 编写，不修改工程默认 C 标准。本文未据此声称已构建或已在板上验证。
 
 ## 当前实现限制
 
-- PID、ramp、ringBuffer、math_utils 已有源文件或头文件；Bsp 的 PWM、CAN、UART、LED、OS、ADC 模块及 Components 的 DBUS 已有实现。文件存在不表示硬件行为已在板上验证。
-- `motor_tt` 当前识别六路映射，但因 RZ7889 驱动真值表、换向安全规则及逐电机标定尚未确认，`enable` 和占空比控制遇到未配置状态时直接忽略；保持默认关闭。
-- `servo` 的六路接口存在，但脉宽、角度和初始位置标定尚未配置，默认不允许启用或输出。
-- `motor_dji` 当前通过 motor_dji_register 复制配置结构体注册电机；已实现 M2006/C610、M3508/C620 和 GM6020 电流控制协议，默认未注册实际设备，不会启动设备处理任务或发送控制帧。
-- I2C 明确暂不实现，也不创建 `i2c.h` / `i2c.c` 文件。此处描述的是当前源码状态；其余章节中超出已实现范围的函数签名与行为仍属设计约定，不能视为已有实现。
+### 已实现
+
+- Algorithm：`pid.h/.c`、`ramp.h/.c`、`ringBuffer.h/.c`、`math_utils.h`，与本文原型一致。
+- Bsp：`pwm`（`pwm_setDuty` / `pwm_disable` / `pwm_shutdown`）、`can`（`can_init` / `can_send` / `can_receive` / `can_register`）、`uart`（`uart_register` / `uart_receiveFrame`，仅 USART6 收帧）、`adc`（`adc_sample`）、`led`（`led_on` / `led_off` / `led_set`）、`os`（见下表）；`bsp_init` 与 `panic`。
+- Components：`dbus`（`dbus_get` / `dbus_useUartInstead` / `dbus_waitData`）、`sbus`（`sbus_get` / `sbus_waitData`）、`remote`（`int remote_init(void)`）、`motor_dji`（注册式：M2006/C610、M3508/C620、GM6020 电流模式）、`motor_tt`、`servo`、`motor`（`motor_shutdown`）、`daemon`。
+- 文件存在不等于硬件行为已在板上验证；`docs/板级验证记录.md` 的全部实测项当前均为"未执行"。
+
+### 本文写法与源码不一致之处（一律以源码为准）
+
+| 本文的写法 | 源码实际 |
+|---|---|
+| `motor_id_t`、`MOTOR_1..6` | `motor_tt_id_t`、`MOTOR_TT_1..6`（0 基枚举，`LAST_MOTOR_TT` 为数量上界） |
+| `motor_tt_set_duty` / `motor_tt_stop` / `motor_tt_get_state` / `motor_tt_state_t` | `motor_tt_setDuty` / `motor_tt_disable`；无 `stop`、无 `get_state`、无 `state_t` |
+| `servo_set_pulse_us` / `servo_set_angle_deg` / `servo_get_state` / `servo_config_t` | `servo_setPulse` / `servo_setAngle` / `servo_setDuty`；无 `get_state`、无 `servo_config_t`、无 `calibrated` 门禁 |
+| `pwm_set_duty` / `pwm_set_pair` / `pwm_disable_pair` / `pwm_disable_all` / `pwm_init` | `pwm_setDuty` / `pwm_disable` / `pwm_shutdown`；无成对接口、无 `pwm_disable_all`、无公开 `pwm_init` |
+| `bsp_get_pwm_desc` / `bsp_get_can_desc` / `bsp_get_uart_desc` / `bsp_get_adc_desc` / `bsp_get_led_pin` / `gpio.h`（`gpio_port_t`、`pin_desc_t`） | 均不存在；引脚与频率映射是各驱动 `.c` 内的私有静态表，`bsp.h` 不反向包含驱动头文件 |
+| `bsp_init()` 声明在 `bsp.h` | `bsp.h` 只有 `fault_reason_t` 与 `panic()`；`bsp_init` 由 `project/src/main.c` 前置声明 |
+| `os_scheduler_start` / `os_tick_now` / `os_now_ms` / `os_task_notify` / `os_task_notify_from_isr` / `os_task_wait` / `os_yield_from_isr` / `os_task_delete_dynamic` / `os_tick_t` | 均未实现；实际只有 `os_taskEntry_t`、`os_task_t`、`os_createTask`、`os_deleteTask`、`os_getTime`、`os_delay`、`os_delayUntil`、`OS_WAIT_FOREVER` 与 `os_task_priority_t` |
+| `uart_receive_frame` / `uart_read` / `uart_write` / `uart_get_state` / `uart_state_t` / `uart_desc_t` | 只有 `uart_receiveFrame`（且仅回调任务可调用）；`uart_read` / `uart_write` 是返回 0 的空实现；其余不存在 |
+| `dbus_snapshot_t` / `dbus_get_snapshot` | `dbus_t` / `dbus_get` |
+| `dbus_task`（dbus.c，384 words，优先级 5） | 不存在；收帧由 `uart.c` 的 `uart_rx` 回调任务（优先级 5，384 words）承担，dbus/sbus 在该回调上下文内解析 |
+| 未提及 | `daemon`（`daemon_enable` / `daemon_reload` / `daemon_isOnline` / `daemon_registerCallback`，优先级 4，384 words）、`sbus`、`remote`、`motor.h` 的 `motor_shutdown()`、`can_register`、`uart_register` |
+
+### 其它当前实现限制
+
+- `motor_tt` 与 `servo` 的使能接口**当前不会被忽略**：`motor_tt_enable` + `motor_tt_setDuty`、`servo_enable` + `servo_setPulse/setAngle/setDuty` 会立即驱动 PWM 输出。本文原先声明的"未标定即拒绝调用"门禁并未实现；RZ7889 停机/换向电平、CN10 方向与舵机脉宽/角度范围在 `motor_tt.c` / `servo.c` 中以固定值给出，属未验证假设，接入实际执行器前必须按器件资料核对。
+- `motor_dji` 通过 `motor_dji_register` 复制配置结构体注册电机；已实现 M2006/C610、M3508/C620 和 GM6020 电流控制协议。`Application/Src/robot_main.c` 示例已注册一台 M3508（CAN1、ID 1）；未注册任何设备时不会启动服务任务或发送控制帧。
+- I2C 明确暂不实现，也不创建 `i2c.h` / `i2c.c` 文件。
+- 其余章节中尚未实现的函数签名与行为仍属设计约定，不能视为已有实现。
 
 ## 1. 公共约定
 
@@ -319,7 +343,7 @@ void uart_get_state(uart_id_t id, uart_state_t *out);
 void uart_irq_handler(uart_id_t id);
 ```
 
-- UART_1暂缓实现，保留ID及115200 8N1参数设计，不启用业务收发、中断或TX DMA，不分配TX缓冲，调用调用被忽略；UART_6 为帧模式，100000、8 数据位+偶校验+1 停止位；UART_7 默认关闭，调用调用被忽略。
+- UART_1暂缓实现，保留ID及115200 8N1参数设计，不启用业务收发、中断或TX DMA，不分配TX缓冲，调用调用被忽略；UART_6 为帧模式，100000、8 数据位+偶校验+2 停止位（库为 9 位字长，即 8E2）；UART_7 默认关闭，调用调用被忽略。
 - 模式固定，不能对同一端口同时 stream read 与 receive_frame，模式不符时忽略请求或返回0。read 非阻塞且可部分读取，无数据返回0。
 - 帧 API 根据空闲边界发布帧，空闲不等同“合法遥控帧”；dbus 自行验证 18 字节长度。超长帧丢弃到下一个空闲边界，错误/溢出通过帧错误标志传播，不能把截断帧作为合法数据。
 - error_flags 定义命名位：UART_ERROR_PARITY、UART_ERROR_FRAMING、UART_ERROR_OVERRUN、UART_ERROR_OVERFLOW。非零错误帧可交上层统计，但不作为合法输入。
@@ -395,13 +419,13 @@ typedef struct { gpio_port_t port; uint8_t pin; } pin_desc_t;
 
 ### 4.1 组件初始化
 
-组件不设统一初始化汇总模块。启动入口在 `main.c` 中自行声明并依次调用 `motor_tt_init()`、`servo_init()` 和 `dbus_init()`。
+组件不设统一初始化汇总模块。启动入口在 `main.c` 中自行声明并依次调用 `motor_tt_init()`、`servo_init()` 和 `remote_init()`。
 
-前置条件 bsp_init 成功；顺序 motor_tt → servo → dbus。不可恢复错误由对应模块直接调用 panic()；可恢复问题忽略。只创建各组件的静态资源，不调用 bsp_init、不创建 robot_main、不启动调度器。
+前置条件 bsp_init 成功；当前 main 的实际顺序是 motor_tt_init → motor_dji_init → servo_init → remote_init（remote 内部初始化 dbus 与 sbus）。不可恢复错误由对应模块直接调用 panic()；可恢复问题忽略。只创建各组件的静态资源，不调用 bsp_init、不创建 robot_main、不启动调度器。
 
 ### 4.2 dbus.h / dbus.c
 
-**文件：** `Components/Inc/dbus.h` 提供遥控输入快照；`Components/Src/dbus.c` 持有配置、解码、快照及私有 dbus_task。
+**文件：** `Components/Inc/dbus.h` 提供遥控输入快照；`Components/Src/dbus.c` 持有解码常量与快照状态。解码在 UART 回调任务（`Bsp/Src/uart.c` 的 `uart_rx`，优先级 5、384 words）上下文中执行，dbus.c 自身不创建线程。
 
 ```c
 typedef enum {
@@ -546,7 +570,7 @@ int servo_get_state(servo_id_t id, servo_state_t *out);
 
 ### 5.1 唯一启动装配点
 
-生成main的用户代码区依次执行：ATWP基础初始化 → bsp_init → motor_tt_init → servo_init → dbus_init → 使用main静态栈/控制块直接调用xTaskCreateStatic创建robot_main → os_scheduler_start。初始化不可恢复错误或任务创建失败时直接panic。Application仍只有 `void robot_main(void *args)` 用户入口，不新增应用初始化模块。
+生成main的用户代码区依次执行：ATWP基础初始化 → bsp_init → motor_tt_init → servo_init → remote_init → 使用main静态栈/控制块直接调用xTaskCreateStatic创建robot_main → os_scheduler_start。初始化不可恢复错误或任务创建失败时直接panic。Application仍只有 `void robot_main(void *args)` 用户入口，不新增应用初始化模块。
 
 ### 5.2 静态资源归属表
 
@@ -557,11 +581,11 @@ int servo_get_state(servo_id_t id, servo_state_t *out);
 | os.c | Idle栈/控制块、内核hook数据 | Idle |
 | pwm.c | 通道状态及暂存比较值 | 无 |
 | can.c | 每总线静态RX32帧、硬件邮箱及内部错误状态；无软件TX队列 | 无 |
-| uart.c | 静态ringBuffer、USART6 DMA循环缓冲128字节、双64字节帧槽、帧等待对象 | 无 |
+| uart.c | 静态ringBuffer、USART6 DMA循环缓冲128字节、双帧槽（当前2槽）、回调任务栈与TCB | uart_rx（注册回调时创建，优先级5、384 words） |
 | adc.c | 静态互斥与状态 | 无 |
 | i2c.h / i2c.c（预留） | 暂不实现，首版不占用运行期资源 | 无 |
 | led.c | 初始化状态 | 无 |
-| dbus.c | 参数、快照、静态栈与TCB | dbus_task 384 words |
+| dbus.c | 解码常量与快照状态 | 无线程（由 uart.c 回调任务驱动） |
 | motor_dji.c | 注册配置、反馈/目标/组状态、静态栈与TCB | motor_dji_task 768 words；空配置不开 |
 | motor_tt.c / servo.c | 各六项配置和状态 | 无 |
 
@@ -571,13 +595,13 @@ CAN接收队列及驱动同步对象须计入实施时RAM预算；此表不是�
 
 ```c
 /* 仅展示API组合；放入robot_main的业务逻辑，不额外创建Application文件。 */
-dbus_snapshot_t input;
+dbus_t input;
 
-if (dbus_get_snapshot(&input) == 0 && input.valid && input.online) {
+if (dbus_get(&input) == 0 && input.valid && input.online) {
     /* motor_tt_enable(MOTOR_TT_1)应在用户明确的使能动作中调用一次。 */
-    motor_tt_set_duty(MOTOR_TT_1, input.channel[1]);
+    motor_tt_setDuty(MOTOR_TT_1, input.channel[1]);
 } else {
-    motor_tt_stop(MOTOR_TT_1);
+    motor_tt_disable(MOTOR_TT_1);
 }
 /* 遥控恢复后不会在此片段中自动重新使能。 */
 ```

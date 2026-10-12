@@ -28,6 +28,7 @@
 #include "at32f423_wk_config.h"
 #include "wk_adc.h"
 #include "wk_can.h"
+#include "wk_i2c.h"
 #include "wk_tmr.h"
 #include "wk_usart.h"
 #include "wk_dma.h"
@@ -39,10 +40,9 @@
 
 #include "bsp.h"
 #include "os.h"
-#include "dbus.h"
+#include "remote.h"
 
 void bsp_init(void);
-void dbus_init(void);
 void motor_tt_init(void);
 void motor_dji_init(void);
 void servo_init(void);
@@ -104,6 +104,17 @@ static void wk_wait_for_power_stable(void)
 int main(void)
 {
   /* add user code begin 1 */
+
+  /* PB4 resets with a pull-up: hold motor 3 off before the startup delay. */
+  gpio_init_type motor3_boot_gpio;
+  crm_periph_clock_enable(CRM_GPIOB_PERIPH_CLOCK, TRUE);
+  gpio_bits_reset(GPIOB, GPIO_PINS_4 | GPIO_PINS_5);
+  gpio_default_para_init(&motor3_boot_gpio);
+  motor3_boot_gpio.gpio_pins = GPIO_PINS_4 | GPIO_PINS_5;
+  motor3_boot_gpio.gpio_mode = GPIO_MODE_OUTPUT;
+  motor3_boot_gpio.gpio_out_type = GPIO_OUTPUT_PUSH_PULL;
+  motor3_boot_gpio.gpio_pull = GPIO_PULL_DOWN;
+  gpio_init(GPIOB, &motor3_boot_gpio);
 
   /* add user code end 1 */
 
@@ -180,6 +191,9 @@ int main(void)
                         DMA1_CHANNEL1_BUFFER_SIZE);
   dma_channel_enable(DMA1_CHANNEL1, TRUE);
 
+  /* init i2c2 function. */
+  wk_i2c2_init();
+
   /* add user code begin 2 */
 
   bsp_init();
@@ -187,8 +201,7 @@ int main(void)
   motor_tt_init();
   motor_dji_init();
   servo_init();
-  dbus_init();
-  /* Optional PC simulator mode: dbus_useUartInstead(true); */
+  if (remote_init() != 0) panic(FAULT_INIT);
 
   if (xTaskCreateStatic(robot_main, "robot_main", 768U, NULL,
                         (UBaseType_t)4U, robot_main_stack,

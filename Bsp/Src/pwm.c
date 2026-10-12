@@ -8,10 +8,7 @@
 #include <math.h>
 #include <stddef.h>
 
-#define PWM_SERVO_HZ       50UL
-#define PWM_MOTOR_HZ       20000UL
-#define PWM_SERVO_COUNTS   20000UL
-#define PWM_MOTOR_COUNTS   7500UL
+#define PWM_PERIOD_COUNTS 30000UL
 #define PWM_CHANNEL_COUNT  ((unsigned int)LAST_PWM_CHANNEL)
 
 typedef enum {
@@ -39,24 +36,24 @@ typedef struct {
     { { (port_), (pin_) }, (group_), (channel_), (mux_), (frequency_) }
 
 static const pwm_channel_desc_t s_channels[PWM_CHANNEL_COUNT] = {
-    [PWM_MOTOR_1_IN1] = PWM_DESC(PWM_GPIO_PORT_B, 8U, PWM_GROUP_TMR4, 3U, 2U, 20000U),
-    [PWM_MOTOR_1_IN2] = PWM_DESC(PWM_GPIO_PORT_B, 9U, PWM_GROUP_TMR4, 4U, 2U, 20000U),
-    [PWM_MOTOR_2_IN1] = PWM_DESC(PWM_GPIO_PORT_B, 7U, PWM_GROUP_TMR4, 2U, 2U, 20000U),
-    [PWM_MOTOR_2_IN2] = PWM_DESC(PWM_GPIO_PORT_B, 6U, PWM_GROUP_TMR4, 1U, 2U, 20000U),
-    [PWM_MOTOR_3_IN1] = PWM_DESC(PWM_GPIO_PORT_B, 5U, PWM_GROUP_TMR3, 2U, 2U, 50U),
-    [PWM_MOTOR_3_IN2] = PWM_DESC(PWM_GPIO_PORT_B, 4U, PWM_GROUP_TMR3, 1U, 2U, 50U),
-    [PWM_MOTOR_4_IN1] = PWM_DESC(PWM_GPIO_PORT_A, 10U, PWM_GROUP_TMR1, 3U, 1U, 20000U),
-    [PWM_MOTOR_4_IN2] = PWM_DESC(PWM_GPIO_PORT_A, 9U, PWM_GROUP_TMR1, 2U, 1U, 20000U),
-    [PWM_MOTOR_5_IN1] = PWM_DESC(PWM_GPIO_PORT_B, 15U, PWM_GROUP_TMR12, 2U, 9U, 20000U),
-    [PWM_MOTOR_5_IN2] = PWM_DESC(PWM_GPIO_PORT_B, 14U, PWM_GROUP_TMR12, 1U, 9U, 20000U),
-    [PWM_MOTOR_6_IN1] = PWM_DESC(PWM_GPIO_PORT_B, 10U, PWM_GROUP_TMR2, 3U, 1U, 50U),
-    [PWM_MOTOR_6_IN2] = PWM_DESC(PWM_GPIO_PORT_B, 2U, PWM_GROUP_TMR2, 4U, 1U, 50U),
-    [PWM_SERVO_1] = PWM_DESC(PWM_GPIO_PORT_B, 1U, PWM_GROUP_TMR3, 4U, 2U, 50U),
-    [PWM_SERVO_2] = PWM_DESC(PWM_GPIO_PORT_B, 0U, PWM_GROUP_TMR3, 3U, 2U, 50U),
-    [PWM_SERVO_3] = PWM_DESC(PWM_GPIO_PORT_A, 7U, PWM_GROUP_TMR14, 1U, 9U, 50U),
-    [PWM_SERVO_4] = PWM_DESC(PWM_GPIO_PORT_A, 6U, PWM_GROUP_TMR13, 1U, 9U, 50U),
-    [PWM_SERVO_5] = PWM_DESC(PWM_GPIO_PORT_A, 1U, PWM_GROUP_TMR2, 2U, 1U, 50U),
-    [PWM_SERVO_6] = PWM_DESC(PWM_GPIO_PORT_A, 0U, PWM_GROUP_TMR2, 1U, 1U, 50U)
+    [PWM_MOTOR_1_IN1] = PWM_DESC(PWM_GPIO_PORT_B, 8U, PWM_GROUP_TMR4, 3U, 2U, PWM_FREQUENCY_HZ),
+    [PWM_MOTOR_1_IN2] = PWM_DESC(PWM_GPIO_PORT_B, 9U, PWM_GROUP_TMR4, 4U, 2U, PWM_FREQUENCY_HZ),
+    [PWM_MOTOR_2_IN1] = PWM_DESC(PWM_GPIO_PORT_B, 7U, PWM_GROUP_TMR4, 2U, 2U, PWM_FREQUENCY_HZ),
+    [PWM_MOTOR_2_IN2] = PWM_DESC(PWM_GPIO_PORT_B, 6U, PWM_GROUP_TMR4, 1U, 2U, PWM_FREQUENCY_HZ),
+    [PWM_MOTOR_3_IN1] = PWM_DESC(PWM_GPIO_PORT_B, 5U, PWM_GROUP_TMR3, 2U, 2U, PWM_FREQUENCY_HZ),
+    [PWM_MOTOR_3_IN2] = PWM_DESC(PWM_GPIO_PORT_B, 4U, PWM_GROUP_TMR3, 1U, 2U, PWM_FREQUENCY_HZ),
+    [PWM_MOTOR_4_IN1] = PWM_DESC(PWM_GPIO_PORT_A, 10U, PWM_GROUP_TMR1, 3U, 1U, PWM_FREQUENCY_HZ),
+    [PWM_MOTOR_4_IN2] = PWM_DESC(PWM_GPIO_PORT_A, 9U, PWM_GROUP_TMR1, 2U, 1U, PWM_FREQUENCY_HZ),
+    [PWM_MOTOR_5_IN1] = PWM_DESC(PWM_GPIO_PORT_B, 15U, PWM_GROUP_TMR12, 2U, 9U, PWM_FREQUENCY_HZ),
+    [PWM_MOTOR_5_IN2] = PWM_DESC(PWM_GPIO_PORT_B, 14U, PWM_GROUP_TMR12, 1U, 9U, PWM_FREQUENCY_HZ),
+    [PWM_MOTOR_6_IN1] = PWM_DESC(PWM_GPIO_PORT_B, 10U, PWM_GROUP_TMR2, 3U, 1U, PWM_FREQUENCY_HZ),
+    [PWM_MOTOR_6_IN2] = PWM_DESC(PWM_GPIO_PORT_B, 2U, PWM_GROUP_TMR2, 4U, 1U, PWM_FREQUENCY_HZ),
+    [PWM_SERVO_1] = PWM_DESC(PWM_GPIO_PORT_B, 1U, PWM_GROUP_TMR3, 4U, 2U, PWM_FREQUENCY_HZ),
+    [PWM_SERVO_2] = PWM_DESC(PWM_GPIO_PORT_B, 0U, PWM_GROUP_TMR3, 3U, 2U, PWM_FREQUENCY_HZ),
+    [PWM_SERVO_3] = PWM_DESC(PWM_GPIO_PORT_A, 7U, PWM_GROUP_TMR14, 1U, 9U, PWM_FREQUENCY_HZ),
+    [PWM_SERVO_4] = PWM_DESC(PWM_GPIO_PORT_A, 6U, PWM_GROUP_TMR13, 1U, 9U, PWM_FREQUENCY_HZ),
+    [PWM_SERVO_5] = PWM_DESC(PWM_GPIO_PORT_A, 1U, PWM_GROUP_TMR2, 2U, 1U, PWM_FREQUENCY_HZ),
+    [PWM_SERVO_6] = PWM_DESC(PWM_GPIO_PORT_A, 0U, PWM_GROUP_TMR2, 1U, 1U, PWM_FREQUENCY_HZ)
 };
 
 #undef PWM_DESC
@@ -153,7 +150,7 @@ static uint32_t pwm_timer_clock(const pwm_timer_t *timer,
 static int pwm_clock_plan(pwm_timer_t *timer, uint32_t hz,
                            uint32_t *prescaler, uint32_t *period)
 {
-    uint32_t counts = (hz == PWM_SERVO_HZ) ? PWM_SERVO_COUNTS : PWM_MOTOR_COUNTS;
+    uint32_t counts = PWM_PERIOD_COUNTS;
     uint32_t counter_hz = hz * counts;
 
     if (timer->clock_hz == 0UL || counter_hz == 0UL ||
@@ -189,7 +186,7 @@ static int pwm_group_frequency(pwm_group_t group, uint32_t *hz)
             }
         }
     }
-    if (!found || (frequency != PWM_SERVO_HZ && frequency != PWM_MOTOR_HZ)) {
+    if (!found || frequency != PWM_FREQUENCY_HZ) {
         return -1;
     }
     *hz = frequency;
@@ -246,6 +243,8 @@ static void pwm_configure_timer(pwm_timer_t *timer, uint32_t prescaler,
 {
     uint8_t i;
 
+    /* Discard Workbench input/Hall/slave settings before taking ownership. */
+    tmr_reset(timer->timer);
     tmr_counter_enable(timer->timer, FALSE);
     tmr_cnt_dir_set(timer->timer, TMR_COUNT_UP);
     tmr_clock_source_div_set(timer->timer, TMR_CLOCK_DIV1);
@@ -337,15 +336,15 @@ void pwm_init(void)
 
     pwm_enable_gpio_clocks();
     pwm_enable_timer_clocks();
+    for (i = 0U; i < (uint8_t)(sizeof(s_timers) / sizeof(s_timers[0])); ++i) {
+        pwm_configure_timer(&s_timers[i], prescalers[i], periods[i]);
+    }
     for (i = 0U; i < PWM_CHANNEL_COUNT; ++i) {
         pwm_channel_desc_t desc;
         if (pwm_get_desc((pwm_channel_t)i, &desc)) {
             panic(FAULT_INIT);
         }
         pwm_configure_pin(&desc);
-    }
-    for (i = 0U; i < (uint8_t)(sizeof(s_timers) / sizeof(s_timers[0])); ++i) {
-        pwm_configure_timer(&s_timers[i], prescalers[i], periods[i]);
     }
 }
 
@@ -369,6 +368,11 @@ void pwm_setDuty(pwm_channel_t channel, float duty)
         return;
     }
     primask = pwm_irq_lock();
+    if (duty == 0.0f) {
+        pwm_force_low(timer, desc.timer_channel);
+        pwm_irq_unlock(primask);
+        return;
+    }
     tmr_channel_value_set(timer, pwm_channel_select(desc.timer_channel),
                           pwm_compare(&desc, duty));
     tmr_output_channel_mode_select(timer,
@@ -403,6 +407,7 @@ void pwm_disable(pwm_channel_t channel)
 void pwm_shutdown(void)
 {
     uint8_t i;
+    pwm_enable_gpio_clocks();
     for (i = 0U; i < PWM_CHANNEL_COUNT; ++i) {
         pwm_channel_desc_t desc;
         tmr_type *timer;

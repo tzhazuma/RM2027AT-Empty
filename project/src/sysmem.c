@@ -25,6 +25,7 @@
 /* add user code end Header */
 
 #include <errno.h>
+#include <stddef.h>
 #include <stdint.h>
 
 /**

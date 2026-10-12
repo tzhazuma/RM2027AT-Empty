@@ -23,6 +23,9 @@ static bool dbus_registered;
 static dbus_t dbus_snapshot;
 static bool dbus_init_called;
 
+void dbus_init(void);
+void dbus_receiveFrame(const uart_frame_t *frame);
+
 static uint16_t read_u16_le(const uint8_t *bytes)
 {
     return (uint16_t)((uint16_t)bytes[0] | ((uint16_t)bytes[1] << 8U));
@@ -130,9 +133,8 @@ static void publish_frame(const uint8_t frame[DBUS_FRAME_SIZE],
     taskEXIT_CRITICAL();
 }
 
-static void dbus_receive(const uart_frame_t *frame, void *context)
+void dbus_receiveFrame(const uart_frame_t *frame)
 {
-    (void)context;
     if (frame->length == DBUS_FRAME_SIZE && frame->error_flags == 0U)
         publish_frame(frame->data, frame->timestamp_ms);
 }
@@ -178,9 +180,6 @@ void dbus_init(void)
     }
     dbus_init_called = true;
 
-    dbus_useUartInstead(false);
-
-    if (uart_register(UART_6, dbus_receive, NULL) != 0) panic(FAULT_INIT);
     dbus_registered = true;
 }
 

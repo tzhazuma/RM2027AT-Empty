@@ -35,6 +35,7 @@ set(WK_Application_Src
     ${CMAKE_SOURCE_DIR}/project/src/wk_usart.c
     ${CMAKE_SOURCE_DIR}/project/src/wk_gpio.c
     ${CMAKE_SOURCE_DIR}/project/src/wk_dma.c
+    ${CMAKE_SOURCE_DIR}/project/src/wk_i2c.c
     ${CMAKE_SOURCE_DIR}/startup_at32f423.s
 )
 
@@ -53,6 +54,8 @@ set(RM2027AT_Framework_Src
     ${CMAKE_SOURCE_DIR}/Bsp/Src/uart.c
     ${CMAKE_SOURCE_DIR}/Components/Src/daemon.c
     ${CMAKE_SOURCE_DIR}/Components/Src/dbus.c
+    ${CMAKE_SOURCE_DIR}/Components/Src/sbus.c
+    ${CMAKE_SOURCE_DIR}/Components/Src/remote.c
     ${CMAKE_SOURCE_DIR}/Components/Src/motor_tt.c
     ${CMAKE_SOURCE_DIR}/Components/Src/motor_dji.c
     ${CMAKE_SOURCE_DIR}/Components/Src/motor.c
@@ -85,6 +88,7 @@ set(AT32_Drivers_Src
     ${CMAKE_SOURCE_DIR}/libraries/drivers/src/at32f423_crm.c
     ${CMAKE_SOURCE_DIR}/libraries/drivers/src/at32f423_tmr.c
     ${CMAKE_SOURCE_DIR}/libraries/drivers/src/at32f423_gpio.c
+    ${CMAKE_SOURCE_DIR}/libraries/drivers/src/at32f423_i2c.c
     ${CMAKE_SOURCE_DIR}/libraries/drivers/src/at32f423_usart.c
     ${CMAKE_SOURCE_DIR}/libraries/drivers/src/at32f423_pwc.c
     ${CMAKE_SOURCE_DIR}/libraries/drivers/src/at32f423_adc.c

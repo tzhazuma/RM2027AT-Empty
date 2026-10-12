@@ -6,6 +6,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/* All hardware PWM groups share this configured frequency. */
+#define PWM_FREQUENCY_HZ 250UL
+
 typedef enum {
   PWM_MOTOR_1_IN1,
   PWM_MOTOR_1_IN2,

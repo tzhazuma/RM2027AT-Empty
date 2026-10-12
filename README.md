@@ -11,6 +11,7 @@ Application → Components → Bsp → ThirdParty + ATWP生成
 
 - **Application**：默认用户入口为 `void robot_main(void *args)`，位于 `Application/Src/robot_main.c`。在此实现机器人业务；启动装配在 `project/src/main.c`。
 - **Components**：遥控器 DBUS、TT 直流电机、大疆 CAN 电机及舵机，位于 `Components/Inc`、`Components/Src`；初始化由 `main()` 直接装配。
+- **SBUS 遥控**：支持 16 路模拟通道、2 路数字通道及丢帧/失控检测，与 DBUS 共用 USART6，按包长度自动区分 DBUS（18 字节）和 SBUS（25 字节）；见 [SBUS 遥控](docs/SBUS遥控.md)。
 - **Bsp**：板级映射、PWM、CAN、UART、ADC、LED、OS 线程接口，位于 `Bsp/Inc`、`Bsp/Src`。
 - **Algorithm**：PID、斜坡、数学工具和环形缓冲，不依赖硬件或上层模块，位于 `Algorithm/Inc`、`Algorithm/Src`。
 - **ThirdParty + ATWP生成**：FreeRTOS、AT32 外设库、生成的启动/外设代码和中断接入，位于 `ThirdParty`、`libraries`、`project`。
@@ -44,4 +45,4 @@ FreeRTOS V11.3.1 源码已作为普通目录提交，直接下载 GitHub ZIP 即
 
 ## 示例程序
 
-[robot_main.c](Application/Src/robot_main.c) 是最小 M3508/C620 定速 PID 示例：CAN1、ID 1，默认 `target_rpm=500`，每 10 ms 根据 `motor.measure.speed_rpm` 计算并发送电流。`current` 为最新指令。示例不做离线判断或 PID 重置；驱动自身的反馈与命令超时行为保持不变。PID 参数和电机配置需按实际硬件调整。
+[robot_main.c](Application/Src/robot_main.c) 是最小 M3508/C620 定速 PID 示例：CAN1、ID 1，默认 `target_rpm=500`，每 10 ms 读取 SBUS 快照到 `remote`，并根据 `motor.measure.speed_rpm` 计算并发送电流。启动通过 remote_init() 统一初始化遥控接收，按包长度自动区分 DBUS/SBUS。遥控通道尚未绑定到目标速度；示例不做遥控离线判断或 PID 重置，驱动自身的反馈与命令超时行为保持不变。PID 参数和电机配置需按实际硬件调整。

@@ -12,7 +12,7 @@
 #define SERVO_INITIAL_PULSE_US 1500U
 #define SERVO_ANGLE_MIN_DEG 0.0f
 #define SERVO_ANGLE_MAX_DEG 180.0f
-#define SERVO_PERIOD_US 20000.0f
+#define SERVO_PERIOD_US (1000000.0f / (float)PWM_FREQUENCY_HZ)
 
 typedef struct {
     uint32_t pulse_us;
@@ -79,10 +79,10 @@ void servo_enable(servo_id_t id)
     if (servo_id_to_index(id, &index)) {
         return;
     }
+    taskENTER_CRITICAL();
     pwm_setDuty(servo_pwm_channel(index),
                 (float)SERVO_INITIAL_PULSE_US / SERVO_PERIOD_US);
 
-    taskENTER_CRITICAL();
     s_servo_state[index].pulse_us = SERVO_INITIAL_PULSE_US;
     s_servo_state[index].target_angle_deg =
         servo_angle_from_pulse(SERVO_INITIAL_PULSE_US);
@@ -101,9 +101,8 @@ void servo_disable(servo_id_t id)
         return;
     }
 
-    pwm_disable(servo_pwm_channel(index));
-
     taskENTER_CRITICAL();
+    pwm_disable(servo_pwm_channel(index));
     s_servo_state[index].pulse_us = 0U;
     s_servo_state[index].target_angle_deg = 0.0f;
     s_servo_state[index].enabled = false;
@@ -123,13 +122,14 @@ void servo_setPulse(servo_id_t id, uint32_t pulse_us)
     if (pulse_us < SERVO_PULSE_MIN_US || pulse_us > SERVO_PULSE_MAX_US) {
         return;
     }
+    taskENTER_CRITICAL();
     if (!s_servo_state[index].enabled) {
+        taskEXIT_CRITICAL();
         return;
     }
 
     pwm_setDuty(servo_pwm_channel(index), (float)pulse_us / SERVO_PERIOD_US);
 
-    taskENTER_CRITICAL();
     s_servo_state[index].pulse_us = pulse_us;
     s_servo_state[index].target_angle_deg =
         servo_angle_from_pulse(pulse_us);
@@ -138,7 +138,6 @@ void servo_setPulse(servo_id_t id, uint32_t pulse_us)
 
 void servo_setAngle(servo_id_t id, float angle_deg)
 {
-    size_t index;
     double fraction;
     double pulse;
     uint32_t pulse_us;
@@ -146,17 +145,11 @@ void servo_setAngle(servo_id_t id, float angle_deg)
     if (!s_initialized) {
         return;
     }
-    if (servo_id_to_index(id, &index)) {
-        return;
-    }
     if (!isfinite(angle_deg)) {
         return;
     }
     if (angle_deg < SERVO_ANGLE_MIN_DEG ||
         angle_deg > SERVO_ANGLE_MAX_DEG) {
-        return;
-    }
-    if (!s_servo_state[index].enabled) {
         return;
     }
 
@@ -169,18 +162,13 @@ void servo_setAngle(servo_id_t id, float angle_deg)
         return;
     }
 
-    pwm_setDuty(servo_pwm_channel(index), (float)pulse_us / SERVO_PERIOD_US);
-
-    taskENTER_CRITICAL();
-    s_servo_state[index].pulse_us = pulse_us;
-    s_servo_state[index].target_angle_deg =
-        servo_angle_from_pulse(pulse_us);
-    taskEXIT_CRITICAL();
+    servo_setPulse(id, pulse_us);
 }
 
 
 void servo_setDuty(servo_id_t id, float duty)
 {
-    if (!isfinite(duty) || duty < 0.025f || duty > 0.125f) return;
+    if (!isfinite(duty) || duty < (float)SERVO_PULSE_MIN_US / SERVO_PERIOD_US ||
+        duty > (float)SERVO_PULSE_MAX_US / SERVO_PERIOD_US) return;
     servo_setPulse(id, (uint32_t)floor((double)duty * SERVO_PERIOD_US + 0.5));
 }

@@ -58,6 +58,15 @@
             <ModeSub name="Debug interface" value="SWD"/>
         </Mode>
     </DEBUG>
+    <I2C2>
+        <Mode>
+            <ModeSub name="I2C" value="I2C"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="Timing_Configuration_Value" value="0x60E02E2E"/>
+            <ParametersSub name="DualAddressMode" value="DISABLE"/>
+        </Parameters>
+    </I2C2>
     <SYSTEM>
         <Mode>
             <ModeSub name="Time_Base" value=""/>
@@ -164,9 +173,9 @@
         <CRM_IRQHandler>0;5;0;0;0;0</CRM_IRQHandler>
         <DMA1_Channel1_IRQHandler>1;5;0;0;0;1</DMA1_Channel1_IRQHandler>
         <ADC1_IRQHandler>0;5;0;0;0;0</ADC1_IRQHandler>
-        <CAN1_TX_IRQHandler>0;5;0;0;0;0</CAN1_TX_IRQHandler>
+        <CAN1_TX_IRQHandler>0;0;0;0;0;0</CAN1_TX_IRQHandler>
         <CAN1_RX0_IRQHandler>1;5;0;0;0;1</CAN1_RX0_IRQHandler>
-        <CAN1_RX1_IRQHandler>0;5;0;0;0;0</CAN1_RX1_IRQHandler>
+        <CAN1_RX1_IRQHandler>0;0;0;0;0;0</CAN1_RX1_IRQHandler>
         <CAN1_SE_IRQHandler>1;5;0;0;0;1</CAN1_SE_IRQHandler>
         <TMR1_BRK_TMR9_IRQHandler>0;5;0;0;0;0</TMR1_BRK_TMR9_IRQHandler>
         <TMR1_OVF_TMR10_IRQHandler>0;5;0;0;0;0</TMR1_OVF_TMR10_IRQHandler>
@@ -175,13 +184,15 @@
         <TMR2_GLOBAL_IRQHandler>0;5;0;0;0;0</TMR2_GLOBAL_IRQHandler>
         <TMR3_GLOBAL_IRQHandler>0;5;0;0;0;0</TMR3_GLOBAL_IRQHandler>
         <TMR4_GLOBAL_IRQHandler>0;5;0;0;0;0</TMR4_GLOBAL_IRQHandler>
+        <I2C2_EVT_IRQHandler>0;0;0;0;0;0</I2C2_EVT_IRQHandler>
+        <I2C2_ERR_IRQHandler>0;0;0;0;0;0</I2C2_ERR_IRQHandler>
         <USART1_IRQHandler>0;5;0;0;0;0</USART1_IRQHandler>
         <TMR12_GLOBAL_IRQHandler>0;5;0;0;0;0</TMR12_GLOBAL_IRQHandler>
         <TMR13_GLOBAL_IRQHandler>0;5;0;0;0;0</TMR13_GLOBAL_IRQHandler>
         <TMR14_GLOBAL_IRQHandler>0;5;0;0;0;0</TMR14_GLOBAL_IRQHandler>
-        <CAN2_TX_IRQHandler>0;5;0;0;0;0</CAN2_TX_IRQHandler>
+        <CAN2_TX_IRQHandler>0;0;0;0;0;0</CAN2_TX_IRQHandler>
         <CAN2_RX0_IRQHandler>1;5;0;0;0;1</CAN2_RX0_IRQHandler>
-        <CAN2_RX1_IRQHandler>0;5;0;0;0;0</CAN2_RX1_IRQHandler>
+        <CAN2_RX1_IRQHandler>0;0;0;0;0;0</CAN2_RX1_IRQHandler>
         <CAN2_SE_IRQHandler>1;5;0;0;0;1</CAN2_SE_IRQHandler>
         <USART6_IRQHandler>1;5;0;0;0;1</USART6_IRQHandler>
         <FPU_IRQHandler>0;5;0;0;0;0</FPU_IRQHandler>
@@ -234,6 +245,7 @@
         <PinSub pinname="PB1" signalname="TMR3_CH4" signaltype="3"/>
         <PinSub pinname="PB2" signalname="TMR2_CH4" signaltype="3"/>
         <PinSub pinname="PB10" signalname="TMR2_CH3" signaltype="3"/>
+        <PinSub pinname="PB11" signalname="I2C2_SDA" signaltype="2"/>
         <PinSub pinname="PF8" signalname="USART7_TX" signaltype="2"/>
         <PinSub pinname="PB12" signalname="CAN2_RX" signaltype="2"/>
         <PinSub pinname="PB13" signalname="CAN2_TX" signaltype="2"/>
@@ -245,6 +257,7 @@
         <PinSub pinname="PA11" signalname="CAN1_RX" signaltype="2"/>
         <PinSub pinname="PA12" signalname="CAN1_TX" signaltype="2"/>
         <PinSub pinname="PA13" signalname="DEBUG_JTMS_SWDIO" signaltype="2"/>
+        <PinSub pinname="PF6" signalname="I2C2_SCL" signaltype="2"/>
         <PinSub pinname="PA14" signalname="DEBUG_JTCK_SWCLK" signaltype="2"/>
         <PinSub pinname="PA15" signalname="USART1_TX" signaltype="2"/>
         <PinSub pinname="PB3" signalname="USART1_RX" signaltype="2"/>
@@ -291,5 +304,6 @@
         <RankSub RankNum="66" FixPosFlag="FALSE" FuncName="wk_tmr13_init" InstanceName="TMR13" CodeSection="tmr13 function" MainDoNotCallFlag="FALSE"/>
         <RankSub RankNum="67" FixPosFlag="FALSE" FuncName="wk_tmr14_init" InstanceName="TMR14" CodeSection="tmr14 function" MainDoNotCallFlag="FALSE"/>
         <RankSub RankNum="11" FixPosFlag="FALSE" FuncName="wk_dma1_channel1_init" InstanceName="DMA1_Channel1" CodeSection="dma1_channel1_init" MainDoNotCallFlag="FALSE"/>
+        <RankSub RankNum="49" FixPosFlag="FALSE" FuncName="wk_i2c2_init" InstanceName="I2C2" CodeSection="i2c2 function" MainDoNotCallFlag="FALSE"/>
     </FunctionRankInfo>
 </Root>

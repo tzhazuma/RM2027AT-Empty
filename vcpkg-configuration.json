@@ -1,0 +1,23 @@
+{
+  "registries": [
+    {
+      "name": "arm",
+      "kind": "artifact",
+      "location": "https://artifacts.tools.arm.com/vcpkg-registry"
+    }
+  ],
+  "requires": {
+    "arm:tools/kitware/cmake": "4.3.3",
+    "arm:tools/ninja-build/ninja": "1.13.2",
+    "arm:compilers/arm/arm-none-eabi-gcc": "15.3.1",
+    "arm:tools/open-cmsis-pack/cmsis-toolbox": "2.15.0",
+    "arm:compilers/arm/armclang": "6.24.0",
+    "arm:tools/arm/uv2csolution": "1.6.0",
+    "arm:debuggers/arm/armdbg": "6.11.0",
+    "arm:compilers/arm/armclang-fusa": "6.22.2",
+    "arm:models/arm/avh-fvp": "11.32.23",
+    "arm:compilers/iar/cxarm": "10.10.2",
+    "arm:compilers/arm/llvm-embedded": "23.1.0",
+    "arm:debuggers/pyocd/pyocd": "0.45.1"
+  }
+}
